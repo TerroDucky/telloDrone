@@ -10,7 +10,7 @@ def controller_process(control_queue):
 
     speed_xy = 100
     speed_ud = 100
-    speed_yaw = 90
+    speed_yaw = 100
 
     running = True
 
@@ -23,7 +23,7 @@ def controller_process(control_queue):
 
         keys = pygame.key.get_pressed()
 
-        # Movement keys (same logic you already had)
+        # Movement keys
         if keys[pygame.K_a]:
             lr = -speed_xy
         elif keys[pygame.K_d]:
@@ -44,7 +44,7 @@ def controller_process(control_queue):
         elif keys[pygame.K_RIGHT]:
             yaw = speed_yaw
 
-        # Send latest control values (non‑blocking)
+        # Send latest control values
         if not control_queue.full():
             control_queue.put((lr, fb, ud, yaw))
 

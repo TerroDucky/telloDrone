@@ -14,7 +14,7 @@ def drone_process(control_queue):
         lr = fb = ud = yaw = 0
 
         while True:
-            # Get latest control values (if available)
+            # Get latest control values
             if not control_queue.empty():
                 lr, fb, ud, yaw = control_queue.get()
 
