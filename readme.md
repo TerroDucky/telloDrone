@@ -11,3 +11,17 @@ Vi vil gerne kontrollere dronen med en selvbygget arduino controller
 - 3x knapper
 - 2x joystick
 - 1x LCD skærm
+
+# Trelagsmodellen
+## Præsentationslag
+Det at dronen kan flyve
+<br>
+Sende input fra controller
+
+## Logiklag
+Aflæse værdier fra controlleren
+<br>
+Sende signal til dronen om hvad den skal
+
+## Datalag
+Hvad de forskellige knapper gør
