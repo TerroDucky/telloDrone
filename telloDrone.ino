@@ -1,3 +1,9 @@
+#include <Wire.h>
+#include <rgb_lcd.h>
+
+// LCD
+rgb_lcd lcd;
+
 // Buttons
 const int PinLedRight    = 2;
 const int PinbuttonRight = 3;
@@ -22,19 +28,37 @@ int moveCenterX;
 int moveCenterY;
 int joystickCalibrationDelay = 1500;
 
-const int deadzone = 40;
+const int deadzone = 20;
 
 void setup() {
   Serial.begin(9600);
+
+  // LCD init (IMPORTANT ORDER)
+  Wire.begin();
+  lcd.begin(16, 2);
+  lcd.setRGB(255, 255, 255); // required to enable backlight
+  delay(100);
+  lcd.clear();
+
   // Right button
   pinMode(PinLedRight, OUTPUT);
   pinMode(PinbuttonRight, INPUT_PULLUP);
+
   // left button
   pinMode(PinLedLeft, OUTPUT);
   pinMode(PinbuttonLeft, INPUT_PULLUP);
 
+  // Ult button
   pinMode(PingUltLed, OUTPUT);
   pinMode(PingUltButton, INPUT_PULLUP);
+
+  // LCD: calibration message
+  lcd.setCursor(0, 0);
+  lcd.print("Calibrating...");
+  lcd.setCursor(0, 1);
+  lcd.print("Do not touch");
+
+  Serial.println(" Started calibration... ");
 
   // Calibrate joysticks
   delay(joystickCalibrationDelay);
@@ -42,7 +66,12 @@ void setup() {
   vertCenterY = analogRead(VertJoyY);
   moveCenterX = analogRead(MoveJoyX);
   moveCenterY = analogRead(MoveJoyY);
-  
+
+  // LCD: setup done
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Setup complete");
+
   Serial.println(" Setup completed ");
 }
 
@@ -62,7 +91,6 @@ void loop() {
     // Button is held down
     digitalWrite(PinLedLeft, HIGH);
     Serial.println("ButtonLeft");
-
   } else {
     digitalWrite(PinLedLeft, LOW);
   }
