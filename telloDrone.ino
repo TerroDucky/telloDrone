@@ -33,7 +33,7 @@ const int deadzone = 20;
 void setup() {
   Serial.begin(9600);
 
-  // LCD init (IMPORTANT ORDER)
+  // LCD init 
   Wire.begin();
   lcd.begin(16, 2);
   lcd.setRGB(255, 255, 255); // required to enable backlight
@@ -52,7 +52,7 @@ void setup() {
   pinMode(PingUltLed, OUTPUT);
   pinMode(PingUltButton, INPUT_PULLUP);
 
-  // LCD: calibration message
+  //LCd
   lcd.setCursor(0, 0);
   lcd.print("Calibrating...");
   lcd.setCursor(0, 1);
@@ -81,6 +81,7 @@ void loop() {
   if (digitalRead(PinbuttonRight) == LOW) {
     // Button is held down
     digitalWrite(PinLedRight, HIGH);
+    
     Serial.println("ButtonRight");
   } else {
     digitalWrite(PinLedRight, LOW);
@@ -90,6 +91,7 @@ void loop() {
   if (digitalRead(PinbuttonLeft) == LOW) {
     // Button is held down
     digitalWrite(PinLedLeft, HIGH);
+
     Serial.println("ButtonLeft");
   } else {
     digitalWrite(PinLedLeft, LOW);
@@ -100,6 +102,7 @@ void loop() {
     // Button is held down
     digitalWrite(PingUltLed, LOW);
     Serial.println("UltimateButton");
+
     delay(UltButtonDelay);
   } else {
     digitalWrite(PingUltLed, HIGH);
