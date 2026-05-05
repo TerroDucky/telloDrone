@@ -81,7 +81,7 @@ void loop() {
   if (digitalRead(PinbuttonRight) == LOW) {
     // Button is held down
     digitalWrite(PinLedRight, HIGH);
-    
+
     Serial.println("ButtonRight");
   } else {
     digitalWrite(PinLedRight, LOW);
@@ -122,7 +122,7 @@ void loop() {
     Serial.println(vertY);
   }
 
-  // Movement joystick
+  // Movement joystick 
   int moveX = analogRead(MoveJoyX);
   int moveY = analogRead(MoveJoyY);
 
