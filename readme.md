@@ -34,3 +34,6 @@ Vi har en prototype af en controller, som vi kan benytte og simulere en flyvning
 Vi har ikke fortalt personen hvad de forskellige knapper og lignende gør, og det er dermed deres opgave at gøre det der ligger mest til højrebenet.
 <br> 
 Hvis vi har gjort vores arbejde ordentligt, og har opfyldt både gestalt-lovene og de ti usability heuristics, burde den pågældende person ret hurtigt kunne finde ud af at lave advanceret manøvrer.
+
+## Resultater
+Vi lavede en test med 2 personer, og begge parter kunne uden hjælp regne ud hvad de forskellige knapper og joystick gjorde. Det eneste der var lidt problemer med var de to knapper omme bag på controlleren, som styrer yaw left/right. Da dette blev forklaret for dem, gav det dog god mening.
