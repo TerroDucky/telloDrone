@@ -29,11 +29,19 @@ def drone_process(control_queue):
 if __name__ == "__main__":
     q = mp.Queue(maxsize=1)
 
-    controller = mp.Process(target=__import__("controllerRead").controller_process, args=(q,))
+    controller = mp.Process(
+        target=__import__("controllerRead").controller_process,
+        args=(q,)
+    )
     drone = mp.Process(target=drone_process, args=(q,))
+    video = mp.Process(
+        target=__import__("video_stream").video_process
+    )
 
     controller.start()
     drone.start()
+    video.start()
 
     controller.join()
     drone.join()
+    video.join()
