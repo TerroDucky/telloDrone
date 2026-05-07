@@ -1,58 +1,56 @@
-import pygame
-import multiprocessing as mp
+import serial
+import time
 
 def controller_process(control_queue):
-    pygame.init()
-    pygame.display.set_mode((400, 300))
-    pygame.display.set_caption("Controller Input")
+    ser = serial.Serial("COM8", 9600, timeout=0.05)
+    time.sleep(2)
+    print("[CONTROLLER] Connected")
 
-    clock = pygame.time.Clock()
+    CENTER = 512
+    DEADZONE = 25
+    SCALE = 90
 
-    speed_xy = 100
-    speed_ud = 100
-    speed_yaw = 100
+    lr = fb = ud = yaw = 0
+    yaw_btn = 0
+    ult = False
+    last_serial = time.time()
 
-    running = True
+    def zero(v): return 0 if abs(v) < 5 else v
 
-    while running:
-        lr = fb = ud = yaw = 0
+    while True:
+        line = ser.readline().decode(errors="ignore").strip()
+        now = time.time()
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+        if line:
+            last_serial = now
 
-        keys = pygame.key.get_pressed()
+            if line == "BTN:R:DOWN": yaw_btn = 30
+            elif line == "BTN:R:UP": yaw_btn = 0
+            elif line == "BTN:L:DOWN": yaw_btn = -30
+            elif line == "BTN:L:UP": yaw_btn = 0
+            elif line == "BTN:U:DOWN": ult = True
 
-        # Movement keys
-        if keys[pygame.K_a]:
-            lr = -speed_xy
-        elif keys[pygame.K_d]:
-            lr = speed_xy
+            elif line.startswith("JOY:"):
+                _, data = line.split(":")
+                axis, val = data.split(",")
+                val = int(val)
+                d = val - CENTER
+                if abs(d) < DEADZONE: d = 0
+                s = int((d / 512) * SCALE)
 
-        if keys[pygame.K_w]:
-            fb = speed_xy
-        elif keys[pygame.K_s]:
-            fb = -speed_xy
+                if axis == "VX": yaw = s
+                if axis == "VY": ud  = -s
+                if axis == "MX": lr  = s
+                if axis == "MY": fb  = -s
 
-        if keys[pygame.K_UP]:
-            ud = speed_ud
-        elif keys[pygame.K_DOWN]:
-            ud = -speed_ud
+        # SERIAL FAILSAFE
+        if now - last_serial > 0.2:
+            lr = fb = ud = yaw = yaw_btn = 0
 
-        if keys[pygame.K_LEFT]:
-            yaw = -speed_yaw
-        elif keys[pygame.K_RIGHT]:
-            yaw = speed_yaw
+        yaw_f = zero(yaw + yaw_btn)
+        lr, fb, ud = map(zero, (lr, fb, ud))
 
-        # Send latest control values
-        if not control_queue.full():
-            control_queue.put((lr, fb, ud, yaw))
-
-        clock.tick(20)
-
-    pygame.quit()
-
-
-if __name__ == "__main__":
-    q = mp.Queue(maxsize=1)
-    controller_process(q)
+        while not control_queue.empty():
+            control_queue.get()
+        control_queue.put((lr, fb, ud, yaw_f, ult))
+        ult = False

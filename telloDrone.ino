@@ -1,138 +1,77 @@
 #include <Wire.h>
 #include <rgb_lcd.h>
 
-// LCD
 rgb_lcd lcd;
 
-// Buttons
+// ---------------- PINS ----------------
 const int PinLedRight    = 2;
-const int PinbuttonRight = 3;
+const int PinButtonRight = 3;
 const int PinLedLeft     = 4;
-const int PinbuttonLeft  = 5;
+const int PinButtonLeft  = 5;
+const int PinUltLed      = 6;
+const int PinUltButton   = 7;
 
-const int PingUltLed     = 6;
-const int PingUltButton  = 7;
-const int UltButtonDelay = 5000;
-
-// Joysticks
 const int VertJoyY = A0;
 const int VertJoyX = A1;
-
 const int MoveJoyX = A2;
 const int MoveJoyY = A3;
 
-// Joystick calibration
-int vertCenterX;
-int vertCenterY;
-int moveCenterX;
-int moveCenterY;
-int joystickCalibrationDelay = 1500;
-
-const int deadzone = 20;
+// ---------------- CALIBRATION ----------------
+int vertCenterX, vertCenterY, moveCenterX, moveCenterY;
+bool lastR=false, lastL=false, lastU=false;
 
 void setup() {
   Serial.begin(9600);
-
-  // LCD init 
   Wire.begin();
-  lcd.begin(16, 2);
-  lcd.setRGB(255, 255, 255); // required to enable backlight
-  delay(100);
-  lcd.clear();
+  lcd.begin(16,2);
+  lcd.setRGB(255,255,255);
 
-  // Right button
+  pinMode(PinButtonRight, INPUT_PULLUP);
+  pinMode(PinButtonLeft,  INPUT_PULLUP);
+  pinMode(PinUltButton,   INPUT_PULLUP);
   pinMode(PinLedRight, OUTPUT);
-  pinMode(PinbuttonRight, INPUT_PULLUP);
+  pinMode(PinLedLeft,  OUTPUT);
+  pinMode(PinUltLed,   OUTPUT);
 
-  // left button
-  pinMode(PinLedLeft, OUTPUT);
-  pinMode(PinbuttonLeft, INPUT_PULLUP);
+  lcd.print("Calibrating");
+  delay(1500);
 
-  // Ult button
-  pinMode(PingUltLed, OUTPUT);
-  pinMode(PingUltButton, INPUT_PULLUP);
-
-  //LCd
-  lcd.setCursor(0, 0);
-  lcd.print("Calibrating...");
-  lcd.setCursor(0, 1);
-  lcd.print("Do not touch");
-
-  Serial.println(" Started calibration... ");
-
-  // Calibrate joysticks
-  delay(joystickCalibrationDelay);
   vertCenterX = analogRead(VertJoyX);
   vertCenterY = analogRead(VertJoyY);
   moveCenterX = analogRead(MoveJoyX);
   moveCenterY = analogRead(MoveJoyY);
 
-  // LCD: setup done
   lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Setup complete");
-
-  Serial.println(" Setup completed ");
+  lcd.print("Ready");
 }
 
 void loop() {
+  handleButton(PinButtonRight, PinLedRight, "R", lastR);
+  handleButton(PinButtonLeft,  PinLedLeft,  "L", lastL);
+  handleButton(PinUltButton,   PinUltLed,   "U", lastU);
 
-  // Right button
-  if (digitalRead(PinbuttonRight) == LOW) {
-    // Button is held down
-    digitalWrite(PinLedRight, HIGH);
+  sendJoy("VX", VertJoyX);
+  sendJoy("VY", VertJoyY);
+  sendJoy("MX", MoveJoyX);
+  sendJoy("MY", MoveJoyY);
 
-    Serial.println("ButtonRight");
-  } else {
-    digitalWrite(PinLedRight, LOW);
+  delay(20); // 50 Hz
+}
+
+void handleButton(int btn, int led, const char* lbl, bool &last) {
+  bool p = digitalRead(btn) == LOW;
+  digitalWrite(led, p ? HIGH : LOW);
+  if (p != last) {
+    Serial.print("BTN:");
+    Serial.print(lbl);
+    Serial.println(p ? ":DOWN" : ":UP");
+    last = p;
   }
+}
 
-  // Left button
-  if (digitalRead(PinbuttonLeft) == LOW) {
-    // Button is held down
-    digitalWrite(PinLedLeft, HIGH);
-
-    Serial.println("ButtonLeft");
-  } else {
-    digitalWrite(PinLedLeft, LOW);
-  }
-
-  // Ultimate button
-  if (digitalRead(PingUltButton) == LOW) {
-    // Button is held down
-    digitalWrite(PingUltLed, LOW);
-    Serial.println("UltimateButton");
-
-    delay(UltButtonDelay);
-  } else {
-    digitalWrite(PingUltLed, HIGH);
-  }
-
-  // Vertical joystick
-  int vertY = analogRead(VertJoyY);
-  int vertX = analogRead(VertJoyX);
-
-  if (abs(vertX - vertCenterX) > deadzone) {
-    Serial.print("Vertical Joystick X: ");
-    Serial.println(vertX);
-  }
-
-  if (abs(vertY - vertCenterY) > deadzone) {
-    Serial.print("Vertical Joystick Y: ");
-    Serial.println(vertY);
-  }
-
-  // Movement joystick 
-  int moveX = analogRead(MoveJoyX);
-  int moveY = analogRead(MoveJoyY);
-
-  if (abs(moveX - moveCenterX) > deadzone) {
-    Serial.print("Movement Joystick X: ");
-    Serial.println(moveX);
-  }
-
-  if (abs(moveY - moveCenterY) > deadzone) {
-    Serial.print("Movement Joystick Y: ");
-    Serial.println(moveY);
-  }
+void sendJoy(const char* lbl, int pin) {
+  Serial.print("JOY:");
+  Serial.print(lbl);
+  Serial.print(",");
+  Serial.println(analogRead(pin));
 }

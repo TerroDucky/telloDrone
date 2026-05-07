@@ -1,47 +1,57 @@
 import time
+import threading
 import multiprocessing as mp
 from djitellopy import Tello
+import cv2
 
-def drone_process(control_queue):
+def video_thread(tello):
+    tello.streamon()
+    fr = tello.get_frame_read()
+    while True:
+        if fr.frame is not None:
+            cv2.imshow("Tello", fr.frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    tello.streamoff()
+    cv2.destroyAllWindows()
+
+def drone_process(q):
     tello = Tello()
     tello.connect()
-    print("Battery:", tello.get_battery())
+    print("[DRONE] Battery:", tello.get_battery(), "%")
+
+    threading.Thread(target=video_thread, args=(tello,), daemon=True).start()
 
     tello.takeoff()
     time.sleep(1)
 
+    lr = fb = ud = yaw = 0
+    last_ctrl = time.time()
+
     try:
-        lr = fb = ud = yaw = 0
-
         while True:
-            # Get latest control values
-            if not control_queue.empty():
-                lr, fb, ud, yaw = control_queue.get()
+            if not q.empty():
+                lr, fb, ud, yaw, ult = q.get()
+                last_ctrl = time.time()
+                if ult:
+                    print("[DRONE] Ultimate!")
+                    tello.flip_forward()
 
-            tello.send_rc_control(lr, fb, ud, yaw)
-            time.sleep(0.05)  # ~20 Hz
+            if time.time() - last_ctrl > 0.3:
+                tello.send_rc_control(0,0,0,0)
+            else:
+                tello.send_rc_control(lr, fb, ud, yaw)
+
+            time.sleep(0.05)
 
     finally:
-        tello.send_rc_control(0, 0, 0, 0)
+        tello.send_rc_control(0,0,0,0)
+        time.sleep(0.5)
         tello.land()
 
-
 if __name__ == "__main__":
+    mp.set_start_method("spawn", force=True)
     q = mp.Queue(maxsize=1)
 
-    controller = mp.Process(
-        target=__import__("controllerRead").controller_process,
-        args=(q,)
-    )
-    drone = mp.Process(target=drone_process, args=(q,))
-    video = mp.Process(
-        target=__import__("video_stream").video_process
-    )
-
-    controller.start()
-    drone.start()
-    video.start()
-
-    controller.join()
-    drone.join()
-    video.join()
+    mp.Process(target=__import__("controllerRead").controller_process, args=(q,)).start()
+    mp.Process(target=drone_process, args=(q,)).start()
